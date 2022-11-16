@@ -24,6 +24,8 @@ linters:
     - execinquery # checks SQL queries
     - exhaustruct # checks if all structure fields are initialized
     - nonamedreturns # forbids named returns
+    - gomnd # forbids magic numbers
+    - ireturn # forbids returning interfaces
 linters-settings:
   godox:
     keywords:

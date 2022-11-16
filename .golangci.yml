@@ -1,0 +1,56 @@
+linters:
+  enable-all: true
+  disable:
+    - golint # deprecated
+    - interfacer # deprecated
+    - scopelint # deprecated
+    - nosnakecase # deprecated
+    - varcheck # deprecated
+    - structcheck # deprecated
+    - deadcode # deprecated
+    - gocognit # detects complex functions
+    - maligned # checks if structs can be reordered for more efficient packing
+    - rowserrcheck # checks if errors in DB queries are checked
+    - funlen # detects long functions
+    - depguard # checks imports against an allow-list
+    - goerr113 # forbids dynamic errors like ad-hoc wrapping with fmt.Errorf
+    - exhaustivestruct # requires struct initializations to contain all fields
+    - testpackage # requires tests to be in a separate package
+    - gochecknoglobals # forbids global variables
+    - wrapcheck # requires errors from external packages to be wrapped
+    - paralleltest # requires all test cases to run t.Parallel()
+    - forbidigo # forbids Println/Printf as it is likely used for debugging
+    - ifshort # requires expressions to be pulled into if statements if the result is only used there
+    - execinquery # checks SQL queries
+    - exhaustruct # checks if all structure fields are initialized
+    - nonamedreturns # forbids named returns
+linters-settings:
+  godox:
+    keywords:
+      - FIXME # FIXME generates a linter warning
+  goconst:
+    min-occurrences: 5
+  cyclop:
+    # calm down a bit
+    max-complexity: 15
+  tagliatelle:
+    # check the struck tag name case
+    case:
+      rules:
+        json: snake
+        yaml: snake
+  gomnd:
+    settings:
+      mnd:
+        ignored-numbers: 0o400,0o600,0o660,0o640,0o644,0o700,0o750
+        ignored-functions: os.WriteFile,os.MkdirAll
+  exhaustive:
+    default-signifies-exhaustive: true
+  varnamelen:
+    max-distance: 20
+  gosec:
+    excludes:
+      - G304 # command execution
+      - G204 # file inclusion
+issues:
+  exclude-use-default: false

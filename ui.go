@@ -62,7 +62,7 @@ var _ tea.Model = &model{}
 func startUI(
 	connectionKey ConnectionKey, listenAddr string,
 	socksAddr string, insecure bool, noColor bool,
-) (update func(tea.Msg), wait func() error) {
+) (update func(tea.Msg), wait func() error, done chan struct{}) {
 	program := tea.NewProgram(&model{
 		connectionKey: connectionKey.String(),
 		listenAddress: listenAddr,
@@ -71,7 +71,7 @@ func startUI(
 		noColor:       noColor,
 	})
 
-	done := make(chan struct{})
+	done = make(chan struct{})
 
 	var err error
 
@@ -87,7 +87,7 @@ func startUI(
 		return err
 	}
 
-	return program.Send, wait
+	return program.Send, wait, done
 }
 
 type tickMsg time.Time
@@ -225,7 +225,7 @@ func formatTime(t time.Time) string {
 func formatDuration(d time.Duration) string {
 	switch {
 	case d < time.Second:
-		return d.String()
+		return d.Round(1 * time.Millisecond).String()
 	case d < time.Minute:
 		return d.Round(10 * time.Millisecond).String()
 	default:

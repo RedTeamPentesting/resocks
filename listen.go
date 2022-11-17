@@ -63,13 +63,17 @@ func runLocalSocksProxy(
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	updateUI, waitForUItoShutdown := startUI(key, connectBackAddr, proxyAddr, insecure, noColor)
-	defer updateUI(statusShutdown)
+	updateUI, waitForUItoShutdown, uiShutdown := startUI(key, connectBackAddr, proxyAddr, insecure, noColor)
+	defer func() {
+		// if the proxy terminates autonomously, notify UI and wait for it to close aswell
+		updateUI(statusShutdown)
+		<-uiShutdown
+	}()
 
 	go func() {
 		uiErr := waitForUItoShutdown()
 
-		cancel()
+		cancel() // notify proxy to shutdown after UI is terminated (ctrl+c)
 
 		if err == nil || errors.Is(err, net.ErrClosed) {
 			err = uiErr

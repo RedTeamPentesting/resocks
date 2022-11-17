@@ -14,7 +14,7 @@ import (
 func relayCommand() *cobra.Command {
 	timeout := 5 * time.Second
 	reconnectAfter := time.Duration(0)
-	connectionKey := fromEnvIfEmpty(defaultConnectionKey, ConnectionKeyEnvVariable)
+	connectionKey := fromEnvWithFallback(ConnectionKeyEnvVariable, defaultConnectionKey)
 	insecure := false
 
 	relayCmd := &cobra.Command{

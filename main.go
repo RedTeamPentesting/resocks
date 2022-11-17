@@ -85,10 +85,11 @@ func yamuxCfg() *yamux.Config {
 	return cfg
 }
 
-func fromEnvIfEmpty(value string, envVariable string) string {
-	if value != "" {
-		return value
+func fromEnvWithFallback(envVariable string, fallback string) string {
+	value, ok := os.LookupEnv(envVariable)
+	if !ok {
+		return fallback
 	}
 
-	return os.Getenv(envVariable)
+	return value
 }

@@ -18,7 +18,7 @@ func listenCommand() *cobra.Command {
 	listenAddr := withDefaultPort("", DefaultListenPort)
 	proxyAddr := withDefaultPort("localhost", DefaultProxyPort)
 	abortOnDisconnect := false
-	connectionKey := fromEnvIfEmpty(defaultConnectionKey, ConnectionKeyEnvVariable)
+	connectionKey := fromEnvWithFallback(ConnectionKeyEnvVariable, defaultConnectionKey)
 	insecure := false
 	noColor := false
 

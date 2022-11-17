@@ -68,7 +68,7 @@ func runLocalSocksProxy(
 	defer func() {
 		// if the proxy terminates autonomously, notify UI and wait for it to close aswell
 		updateUI(statusShutdown)
-		<-uiShutdown
+		<-uiShutdown // only terminate after UI has cleaned up the terminal
 	}()
 
 	go func() {
@@ -129,11 +129,13 @@ func handleRelayConnection(ctx context.Context, listener net.Listener, proxyAddr
 		return fmt.Errorf("initialize multiplexer: %w", err)
 	}
 
+	// we use the first connection to receive socks-related errors from the relay
 	errConn, err := client.Open()
 	if err != nil {
 		return fmt.Errorf("open error notification connection: %w", err)
 	}
 
+	// display the errors in the UI
 	go handleErrorNotificationConnection(errConn, updateUI)
 
 	err = startLocalProxyServer(proxyAddr, client, updateUI)

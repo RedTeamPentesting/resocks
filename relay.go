@@ -95,6 +95,7 @@ func connectBackAndRelay(tlsConfig *tls.Config, connectBackAddr string, timeout 
 
 	defer yamuxServer.Close() //nolint:errcheck
 
+	// we use the first connection to transfer socks-related errors to the listener
 	errConn, err := yamuxServer.Accept()
 	if err != nil {
 		return fmt.Errorf("accept error notification connection: %w", err)

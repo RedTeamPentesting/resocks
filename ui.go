@@ -46,7 +46,9 @@ type model struct {
 	previousConnections []*connection
 	connection          *connection
 	socksActive         bool
+	insecure            bool
 	quitting            bool
+	dotCount            int
 
 	connectionKey string
 	listenAddress string
@@ -58,14 +60,16 @@ type model struct {
 var _ tea.Model = &model{}
 
 func startUI(
-	connectionKey ConnectionKey, listenAddr string, socksAddr string, noColor bool,
+	connectionKey ConnectionKey, listenAddr string,
+	socksAddr string, insecure bool, noColor bool,
 ) (update func(tea.Msg), wait func() error) {
 	program := tea.NewProgram(&model{
 		connectionKey: connectionKey.String(),
 		listenAddress: listenAddr,
 		socksAddress:  socksAddr,
+		insecure:      insecure,
 		noColor:       noColor,
-	}, tea.WithoutSignalHandler(), tea.WithInput(strings.NewReader("")))
+	})
 
 	done := make(chan struct{})
 
@@ -86,8 +90,16 @@ func startUI(
 	return program.Send, wait
 }
 
+type tickMsg time.Time
+
+func tick() tea.Cmd {
+	return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
+}
+
 func (m *model) Init() tea.Cmd {
-	return nil
+	return tick()
 }
 
 func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
@@ -116,6 +128,16 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, tea.Quit
 		}
+	case tea.KeyMsg:
+		if msg.String() == "ctrl+c" {
+			m.quitting = true
+
+			return m, tea.Quit
+		}
+	case tickMsg:
+		m.dotCount = (m.dotCount + 1) % 4
+
+		return m, tick()
 	}
 
 	return m, nil
@@ -140,7 +162,7 @@ func (m *model) previousConnectionsView() string {
 		}
 
 		view += fmt.Sprintf("  ➜ %s from %s until %s (%s)%s\n",
-			conn.IP, formatTime(conn.Start), formatTime(conn.End), conn.End.Sub(conn.Start), errMsg)
+			conn.IP, formatTime(conn.Start), formatTime(conn.End), formatDuration(conn.End.Sub(conn.Start)), errMsg)
 	}
 
 	return view + "\n" + m.style()
@@ -164,11 +186,16 @@ func (m *model) listenerConfigView() string {
 	view := m.style(bold) + "Listening On  : " + m.style() + m.style(brightMagenta, bold) + m.listenAddress + m.style()
 	view += m.style(bold) + "\nConnection Key: " + m.style() + m.style(brightMagenta, bold) + m.connectionKey + m.style()
 
+	if m.insecure {
+		view += m.style(brightYellow) + " (Warning: Client certificate validation disabled)" + m.style()
+	}
+
 	return view + "\n"
 }
 
 func (m *model) currentStateView() string {
-	relayStatus := m.style(brightYellow) + "⧗ Waiting for the relay to connect..." + m.style()
+	relayStatus := m.style(brightYellow) + "⧗ Waiting for the relay to connect" +
+		strings.Repeat(".", m.dotCount) + m.style()
 	if m.quitting {
 		relayStatus = m.style(brightRed) + "✗ Shutdown" + m.style()
 	} else if m.connection != nil {
@@ -193,6 +220,17 @@ func formatTime(t time.Time) string {
 	}
 
 	return t.Format("02.01.06 3:04:05 pm")
+}
+
+func formatDuration(d time.Duration) string {
+	switch {
+	case d < time.Second:
+		return d.String()
+	case d < time.Minute:
+		return d.Round(10 * time.Millisecond).String()
+	default:
+		return d.Round(1 * time.Second).String()
+	}
 }
 
 const (

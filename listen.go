@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
-	"os/signal"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hashicorp/yamux"
@@ -62,18 +60,21 @@ func runLocalSocksProxy(
 		return fmt.Errorf("build TLS config: %w", err)
 	}
 
-	updateUI, waitForUItoClose := startUI(key, connectBackAddr, proxyAddr, noColor)
-	defer func() {
-		updateUI(statusShutdown)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-		uiErr := waitForUItoClose()
+	updateUI, waitForUItoShutdown := startUI(key, connectBackAddr, proxyAddr, insecure, noColor)
+	defer updateUI(statusShutdown)
+
+	go func() {
+		uiErr := waitForUItoShutdown()
+
+		cancel()
+
 		if err == nil || errors.Is(err, net.ErrClosed) {
 			err = uiErr
 		}
 	}()
-
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
 
 	listener, err := tls.Listen("tcp", connectBackAddr, tlsConfig)
 	if err != nil {
@@ -190,6 +191,7 @@ func handleLocalProxyConn(conn net.Conn, sess *yamux.Session) error {
 
 		return nil
 	})
+
 	eg.Go(func() error {
 		_, err := io.Copy(conn, yamuxConn)
 		if err != nil {

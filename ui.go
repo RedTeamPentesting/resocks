@@ -42,7 +42,7 @@ const (
 )
 
 type model struct {
-	errors              []loggedError
+	errors              []*loggedError
 	previousConnections []*connection
 	connection          *connection
 	socksActive         bool
@@ -113,9 +113,11 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.previousConnections = append(m.previousConnections, m.connection)
 			m.connection = nil
 		}
+
+		m.errors = nil
 	case error:
 		if msg != nil {
-			m.errors = append(m.errors, loggedError{Error: msg, Time: time.Now()})
+			m.errors = append(m.errors, &loggedError{Error: msg, Time: time.Now()})
 		}
 	case statusMessage:
 		switch msg {
@@ -134,6 +136,7 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, tea.Quit
 		}
+
 	case tickMsg:
 		m.dotCount = (m.dotCount + 1) % 4
 
@@ -173,13 +176,13 @@ func (m *model) errorsView() string {
 		return ""
 	}
 
-	view := m.style(bold) + "Errors:\n" + m.style() + m.style(brightYellow)
+	view := m.style(bold) + "Errors:\n" + m.style() + m.style(yellow)
 
 	for _, err := range m.errors {
-		view += fmt.Sprintf("  ➜ %s %s\n", formatTime(err.Time), err.Error.Error())
+		view += fmt.Sprintf("  ➜ %s: %s\n", formatTime(err.Time), err.Error.Error())
 	}
 
-	return view + "\n" + m.style()
+	return view + m.style() + "\n"
 }
 
 func (m *model) listenerConfigView() string {
@@ -187,14 +190,14 @@ func (m *model) listenerConfigView() string {
 	view += m.style(bold) + "\nConnection Key: " + m.style() + m.style(brightMagenta, bold) + m.connectionKey + m.style()
 
 	if m.insecure {
-		view += m.style(brightYellow) + " (Warning: Client certificate validation disabled)" + m.style()
+		view += m.style(yellow) + " (Warning: Client certificate validation disabled)" + m.style()
 	}
 
 	return view + "\n"
 }
 
 func (m *model) currentStateView() string {
-	relayStatus := m.style(brightYellow) + "⧗ Waiting for the relay to connect" +
+	relayStatus := m.style(yellow) + "⧗ Waiting for the relay to connect" +
 		strings.Repeat(".", m.dotCount) + m.style()
 	if m.quitting {
 		relayStatus = m.style(brightRed) + "✗ Shutdown" + m.style()
@@ -239,9 +242,9 @@ const (
 	bold          = 1
 	dim           = 2
 	green         = 32
+	yellow        = 33
 	brightRed     = 91
 	bightGreen    = 92
-	brightYellow  = 93
 	brightMagenta = 95
 )
 

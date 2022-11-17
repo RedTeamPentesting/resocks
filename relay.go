@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/binary"
 	"fmt"
+	"log"
 	"net"
+	"os"
 	"time"
 
 	"github.com/armon/go-socks5"
@@ -91,7 +95,14 @@ func connectBackAndRelay(tlsConfig *tls.Config, connectBackAddr string, timeout 
 
 	defer yamuxServer.Close() //nolint:errcheck
 
-	socksServer, err := socks5.New(&socks5.Config{})
+	errConn, err := yamuxServer.Accept()
+	if err != nil {
+		return fmt.Errorf("accept error notification connection: %w", err)
+	}
+
+	defer errConn.Close() //nolint:errcheck
+
+	socksServer, err := socks5.New(&socks5.Config{Logger: newRemoteLogger(errConn)})
 	if err != nil {
 		return fmt.Errorf("initialize socks5 server: %w", err)
 	}
@@ -102,6 +113,27 @@ func connectBackAndRelay(tlsConfig *tls.Config, connectBackAddr string, timeout 
 	}
 
 	return nil
+}
+
+type remoteLogger struct {
+	conn net.Conn
+}
+
+func (l *remoteLogger) Write(b []byte) (int, error) {
+	n, err := os.Stderr.Write(b)
+	if err != nil {
+		return n, err
+	}
+
+	msg := bytes.TrimPrefix(bytes.Trim(b, "\n"), []byte("[ERR] socks: "))
+	length := make([]byte, 4)
+	binary.BigEndian.PutUint32(length, uint32(len(msg)))
+
+	return l.conn.Write(append(length, msg...)) //nolint:makezero
+}
+
+func newRemoteLogger(conn net.Conn) *log.Logger {
+	return log.New(&remoteLogger{conn}, "", 0)
 }
 
 func clientTLSConfig(connectionKey string, insecure bool) (*tls.Config, error) {

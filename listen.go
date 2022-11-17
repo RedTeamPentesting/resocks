@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -128,12 +129,45 @@ func handleRelayConnection(ctx context.Context, listener net.Listener, proxyAddr
 		return fmt.Errorf("initialize multiplexer: %w", err)
 	}
 
+	errConn, err := client.Open()
+	if err != nil {
+		return fmt.Errorf("open error notification connection: %w", err)
+	}
+
+	go handleErrorNotificationConnection(errConn, updateUI)
+
 	err = startLocalProxyServer(proxyAddr, client, updateUI)
 	if err != nil {
 		return fmt.Errorf("proxy: %w", err)
 	}
 
 	return nil
+}
+
+func handleErrorNotificationConnection(conn net.Conn, updateUI func(tea.Msg)) {
+	for {
+		lengthBytes := make([]byte, 4)
+
+		_, err := conn.Read(lengthBytes)
+		if errors.Is(err, io.EOF) {
+			return
+		} else if err != nil {
+			updateUI(fmt.Errorf("read message length from error notification connection: %w", err))
+
+			return
+		}
+
+		msg := make([]byte, binary.BigEndian.Uint32(lengthBytes))
+
+		_, err = conn.Read(msg)
+		if err != nil {
+			updateUI(fmt.Errorf("read message from error notification connection: %w", err))
+
+			return
+		}
+
+		updateUI(fmt.Errorf(string(msg)))
+	}
 }
 
 func startLocalProxyServer(proxyAddr string, sess *yamux.Session, updateUI func(tea.Msg)) error {

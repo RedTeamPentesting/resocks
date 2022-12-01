@@ -22,17 +22,18 @@ type ConnectionKey [ed25519.SeedSize]byte
 func ParseConnectionKey(key string) (ConnectionKey, error) {
 	var connectionKey ConnectionKey
 
+	if key == "" {
+		return connectionKey, fmt.Errorf("connection key is empty")
+	}
+
 	keyBytes, err := base64.RawStdEncoding.DecodeString(key)
 	if err != nil {
 		return connectionKey, fmt.Errorf("base64 decode: %w", err)
 	}
 
-	if isZero(keyBytes) {
-		return connectionKey, fmt.Errorf("invalid all-zero connection key")
-	}
-
-	if len(keyBytes) != ed25519.SeedSize {
-		return connectionKey, fmt.Errorf("key has only %d bytes instead of %d", len(keyBytes), ed25519.SeedSize)
+	err = checkKeyBytes(keyBytes)
+	if err != nil {
+		return connectionKey, err
 	}
 
 	n := copy(connectionKey[:], keyBytes)
@@ -66,6 +67,11 @@ func GenerateConnectionKey() (ConnectionKey, error) {
 		return connectionKey, nil
 	}
 
+	err := checkKeyBytes(connectionKey[:])
+	if err != nil {
+		return connectionKey, err
+	}
+
 	return connectionKey, fmt.Errorf("could not generate a valid non-zero connection key in %d attempts", maxAttempts)
 }
 
@@ -82,6 +88,11 @@ func (key ConnectionKey) PublicKey() string {
 
 // generateCA generates a deterministic CA certificate that never expires.
 func generateCA(key ConnectionKey) (caCert *x509.Certificate, caKey crypto.PrivateKey, err error) {
+	err = checkKeyBytes(key[:])
+	if err != nil {
+		return nil, nil, err
+	}
+
 	privateKey := ed25519.NewKeyFromSeed(key[:])
 
 	caCert = &x509.Certificate{
@@ -223,6 +234,18 @@ func ClientTLSConfigForClientName(key ConnectionKey, clientName string) (*tls.Co
 	}
 
 	return cfg, nil
+}
+
+func checkKeyBytes(key []byte) error {
+	if len(key) != ed25519.SeedSize {
+		return fmt.Errorf("key has only %d bytes instead of %d", len(key), ed25519.SeedSize)
+	}
+
+	if isZero(key) {
+		return fmt.Errorf("invalid all-zero connection key")
+	}
+
+	return nil
 }
 
 func isZero(s []byte) bool {

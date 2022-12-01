@@ -86,8 +86,9 @@ func (key ConnectionKey) PublicKey() string {
 	return base64.RawStdEncoding.EncodeToString(ed25519.NewKeyFromSeed(key[:]).Public().(ed25519.PublicKey))
 }
 
-// generateCA generates a deterministic CA certificate that never expires.
-func generateCA(key ConnectionKey) (caCert *x509.Certificate, caKey crypto.PrivateKey, err error) {
+// GenerateCA generates a deterministic CA certificate that never expires.
+// Identical connection keys will always result in identical ceritificates.
+func GenerateCA(key ConnectionKey) (caCert *x509.Certificate, caKey crypto.PrivateKey, err error) {
 	err = checkKeyBytes(key[:])
 	if err != nil {
 		return nil, nil, err
@@ -95,8 +96,11 @@ func generateCA(key ConnectionKey) (caCert *x509.Certificate, caKey crypto.Priva
 
 	privateKey := ed25519.NewKeyFromSeed(key[:])
 
+	serialNumber := &big.Int{}
+	serialNumber.SetBytes(privateKey.Public().(ed25519.PublicKey)) //nolint:forcetypeassert
+
 	caCert = &x509.Certificate{
-		SerialNumber: big.NewInt(1337),
+		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			CommonName: key.PublicKey(),
 		},
@@ -169,7 +173,7 @@ func ServerTLSConfig(key ConnectionKey) (*tls.Config, error) {
 // connection key with the provided hostname in the server certificate's DNS
 // name section.
 func ServerTLSConfigForHostname(key ConnectionKey, hostname string) (*tls.Config, error) {
-	ca, caKey, err := generateCA(key)
+	ca, caKey, err := GenerateCA(key)
 	if err != nil {
 		return nil, fmt.Errorf("generate CA: %w", err)
 	}
@@ -208,7 +212,7 @@ func ClientTLSConfig(key ConnectionKey) (*tls.Config, error) {
 // client DNS name. Note that the ServerName attribute is still set to the
 // connection key's public key.
 func ClientTLSConfigForClientName(key ConnectionKey, clientName string) (*tls.Config, error) {
-	ca, caKey, err := generateCA(key)
+	ca, caKey, err := GenerateCA(key)
 	if err != nil {
 		return nil, fmt.Errorf("generate CA: %w", err)
 	}

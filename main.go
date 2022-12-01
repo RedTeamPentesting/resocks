@@ -3,14 +3,13 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 
-	"github.com/hashicorp/yamux"
+	"resocks/pbtls"
+
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +42,7 @@ func run() error {
 		Short: "Generates a connection ID",
 		Args:  cobra.NoArgs,
 		RunE: func(*cobra.Command, []string) error {
-			key, err := GenerateConnectionKey()
+			key, err := pbtls.GenerateConnectionKey()
 			if err != nil {
 				return err
 			}
@@ -75,14 +74,6 @@ func binaryName() string {
 	}
 
 	return "resocks"
-}
-
-func yamuxCfg() *yamux.Config {
-	cfg := yamux.DefaultConfig()
-	cfg.LogOutput = nil
-	cfg.Logger = log.New(io.Discard, "", 0)
-
-	return cfg
 }
 
 func fromEnvWithFallback(envVariable string, fallback string) string {

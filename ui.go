@@ -6,6 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"resocks/pbtls"
+	"resocks/proxyrelay"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -21,25 +24,7 @@ type loggedError struct {
 	Time  time.Time
 }
 
-type relayConnectedMessage net.IP
-
-func relayDisconnectedMessage(err error) rawRelayDisconnectedMessage {
-	if err != nil {
-		return rawRelayDisconnectedMessage(err.Error())
-	}
-
-	return rawRelayDisconnectedMessage("")
-}
-
-type rawRelayDisconnectedMessage string
-
-type statusMessage int
-
-const (
-	statusSOCKSInactive statusMessage = 2
-	statusSOCKSActive   statusMessage = 3
-	statusShutdown      statusMessage = 4
-)
+type shutdownMessage struct{}
 
 type model struct {
 	errors              []*loggedError
@@ -60,7 +45,7 @@ type model struct {
 var _ tea.Model = &model{}
 
 func startUI(
-	connectionKey ConnectionKey, listenAddr string,
+	connectionKey pbtls.ConnectionKey, listenAddr string,
 	socksAddr string, insecure bool, noColor bool,
 ) (update func(tea.Msg), wait func() error, done chan struct{}) {
 	program := tea.NewProgram(&model{
@@ -104,32 +89,34 @@ func (m *model) Init() tea.Cmd {
 
 func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
-	case relayConnectedMessage:
-		m.connection = &connection{IP: net.IP(msg), Start: time.Now()}
-	case rawRelayDisconnectedMessage:
-		if m.connection != nil {
-			m.connection.End = time.Now()
-			m.connection.Error = string(msg)
-			m.previousConnections = append(m.previousConnections, m.connection)
-			m.connection = nil
-		}
+	case proxyrelay.Event:
+		switch msg.Type {
+		case proxyrelay.TypeRelayConnected:
+			m.connection = &connection{IP: net.ParseIP(msg.Data), Start: time.Now()}
+		case proxyrelay.TypeRelayDisconnected:
+			if m.connection != nil {
+				m.connection.End = time.Now()
+				m.connection.Error = msg.Data
+				m.previousConnections = append(m.previousConnections, m.connection)
+				m.connection = nil
+			}
 
-		m.errors = nil
-	case error:
-		if msg != nil {
-			m.errors = append(m.errors, &loggedError{Error: msg, Time: time.Now()})
-		}
-	case statusMessage:
-		switch msg {
-		case statusSOCKSActive:
+			m.errors = nil
+		case proxyrelay.TypeSOCKS5Active:
 			m.socksActive = true
-		case statusSOCKSInactive:
+		case proxyrelay.TypeSOCKS5Inactive:
 			m.socksActive = false
-		case statusShutdown:
-			m.quitting = true
+		case proxyrelay.TypeError:
+			if msg.Data != "" {
+				msg.Data = "unknown error"
+			}
 
-			return m, tea.Quit
+			m.errors = append(m.errors, &loggedError{Error: fmt.Errorf(msg.Data), Time: time.Now()})
 		}
+	case shutdownMessage:
+		m.quitting = true
+
+		return m, tea.Quit
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
 			m.quitting = true

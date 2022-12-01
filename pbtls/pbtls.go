@@ -1,4 +1,5 @@
-package main
+// Package pbtls implements password-based TLS.
+package pbtls
 
 import (
 	"crypto"
@@ -79,8 +80,8 @@ func (key ConnectionKey) PublicKey() string {
 	return base64.RawStdEncoding.EncodeToString(ed25519.NewKeyFromSeed(key[:]).Public().(ed25519.PublicKey))
 }
 
-// GenerateCA generates a deterministic CA certificate that never expires.
-func GenerateCA(key ConnectionKey) (caCert *x509.Certificate, caKey crypto.PrivateKey, err error) {
+// generateCA generates a deterministic CA certificate that never expires.
+func generateCA(key ConnectionKey) (caCert *x509.Certificate, caKey crypto.PrivateKey, err error) {
 	privateKey := ed25519.NewKeyFromSeed(key[:])
 
 	caCert = &x509.Certificate{
@@ -109,9 +110,9 @@ func GenerateCA(key ConnectionKey) (caCert *x509.Certificate, caKey crypto.Priva
 	return cert, privateKey, nil
 }
 
-// GenerateCertificate generates an x509 certificate.
-func GenerateCertificate(
-	caCert *x509.Certificate, caKey crypto.PrivateKey, cn string, usage x509.ExtKeyUsage,
+// generateCertificate generates an x509 certificate.
+func generateCertificate(
+	caCert *x509.Certificate, caKey crypto.PrivateKey, hostname string, usage x509.ExtKeyUsage,
 ) (pemCert []byte, pemKey []byte, err error) {
 	now := time.Now()
 
@@ -122,7 +123,7 @@ func GenerateCertificate(
 
 	template := &x509.Certificate{
 		SerialNumber:          big.NewInt(time.Now().UnixNano()),
-		DNSNames:              []string{cn},
+		DNSNames:              []string{hostname},
 		NotBefore:             now,
 		NotAfter:              now.AddDate(1, 0, 0),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
@@ -147,8 +148,17 @@ func GenerateCertificate(
 }
 
 // ServerTLSConfig generates a TLS server config based on the connection key.
+// The server certificate will use the connection keys public key as server
+// DNS name.
 func ServerTLSConfig(key ConnectionKey) (*tls.Config, error) {
-	ca, caKey, err := GenerateCA(key)
+	return ServerTLSConfigForHostname(key, key.PublicKey())
+}
+
+// ServerTLSConfigForHostname generates a TLS server config based on the
+// connection key with the provided hostname in the server certificate's DNS
+// name section.
+func ServerTLSConfigForHostname(key ConnectionKey, hostname string) (*tls.Config, error) {
+	ca, caKey, err := generateCA(key)
 	if err != nil {
 		return nil, fmt.Errorf("generate CA: %w", err)
 	}
@@ -156,7 +166,7 @@ func ServerTLSConfig(key ConnectionKey) (*tls.Config, error) {
 	clientCAPool := x509.NewCertPool()
 	clientCAPool.AppendCertsFromPEM(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: ca.Raw}))
 
-	pemServerCert, pemServerKey, err := GenerateCertificate(ca, caKey, key.PublicKey(), x509.ExtKeyUsageServerAuth)
+	pemServerCert, pemServerKey, err := generateCertificate(ca, caKey, hostname, x509.ExtKeyUsageServerAuth)
 	if err != nil {
 		return nil, fmt.Errorf("generate server certificate: %w", err)
 	}
@@ -177,13 +187,22 @@ func ServerTLSConfig(key ConnectionKey) (*tls.Config, error) {
 }
 
 // ClientTLSConfig generates a TLS client config based on the connection key.
+// The client certificate's DNS name will be the connection keys's public key
+// which is also set as ServerName in the returned *tls.Config.
 func ClientTLSConfig(key ConnectionKey) (*tls.Config, error) {
-	ca, caKey, err := GenerateCA(key)
+	return ClientTLSConfigForClientName(key, key.PublicKey())
+}
+
+// ClientTLSConfigForClientName generates a TLS client config for an arbitrary
+// client DNS name. Note that the ServerName attribute is still set to the
+// connection key's public key.
+func ClientTLSConfigForClientName(key ConnectionKey, clientName string) (*tls.Config, error) {
+	ca, caKey, err := generateCA(key)
 	if err != nil {
 		return nil, fmt.Errorf("generate CA: %w", err)
 	}
 
-	pemClientCert, pemClientKey, err := GenerateCertificate(ca, caKey, key.PublicKey(), x509.ExtKeyUsageClientAuth)
+	pemClientCert, pemClientKey, err := generateCertificate(ca, caKey, key.PublicKey(), x509.ExtKeyUsageClientAuth)
 	if err != nil {
 		return nil, fmt.Errorf("generate client certificate: %w", err)
 	}

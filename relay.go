@@ -1,17 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"crypto/tls"
-	"encoding/binary"
 	"fmt"
-	"log"
 	"net"
-	"os"
+	"resocks/pbtls"
+	"resocks/proxyrelay"
 	"time"
 
-	"github.com/armon/go-socks5"
-	"github.com/hashicorp/yamux"
 	"github.com/spf13/cobra"
 )
 
@@ -88,64 +84,18 @@ func connectBackAndRelay(tlsConfig *tls.Config, connectBackAddr string, timeout 
 
 	defer conn.Close() //nolint:errcheck
 
-	yamuxServer, err := yamux.Server(conn, yamuxCfg())
-	if err != nil {
-		return fmt.Errorf("initialize multiplexer: %w", err)
-	}
-
-	defer yamuxServer.Close() //nolint:errcheck
-
-	// we use the first connection to transfer socks-related errors to the listener
-	errConn, err := yamuxServer.Accept()
-	if err != nil {
-		return fmt.Errorf("accept error notification connection: %w", err)
-	}
-
-	defer errConn.Close() //nolint:errcheck
-
-	socksServer, err := socks5.New(&socks5.Config{Logger: newRemoteLogger(errConn)})
-	if err != nil {
-		return fmt.Errorf("initialize socks5 server: %w", err)
-	}
-
-	err = socksServer.Serve(yamuxServer)
-	if err != nil {
-		return fmt.Errorf("socks5 server: %w", err)
-	}
-
-	return nil
-}
-
-type remoteLogger struct {
-	conn net.Conn
-}
-
-func (l *remoteLogger) Write(b []byte) (int, error) {
-	n, err := os.Stderr.Write(b)
-	if err != nil {
-		return n, err
-	}
-
-	msg := bytes.TrimPrefix(bytes.Trim(b, "\n"), []byte("[ERR] socks: "))
-	length := make([]byte, 4)
-	binary.BigEndian.PutUint32(length, uint32(len(msg)))
-
-	return l.conn.Write(append(length, msg...)) //nolint:makezero
-}
-
-func newRemoteLogger(conn net.Conn) *log.Logger {
-	return log.New(&remoteLogger{conn}, "", 0)
+	return proxyrelay.RunRelay(conn)
 }
 
 func clientTLSConfig(connectionKey string, insecure bool) (*tls.Config, error) {
 	switch {
 	default:
-		key, err := ParseConnectionKey(connectionKey)
+		key, err := pbtls.ParseConnectionKey(connectionKey)
 		if err != nil {
 			return nil, fmt.Errorf("parse connection key: %w", err)
 		}
 
-		cfg, err := ClientTLSConfig(key)
+		cfg, err := pbtls.ClientTLSConfig(key)
 		if err != nil {
 			return nil, fmt.Errorf("configure TLS: %w", err)
 		}
@@ -157,12 +107,12 @@ func clientTLSConfig(connectionKey string, insecure bool) (*tls.Config, error) {
 	case insecure && connectionKey == "": // don't send client cert and don't check server cert
 		return &tls.Config{InsecureSkipVerify: true}, nil //nolint:gosec
 	case insecure && connectionKey != "": // send client cert but don't check server cert
-		key, err := ParseConnectionKey(connectionKey)
+		key, err := pbtls.ParseConnectionKey(connectionKey)
 		if err != nil {
 			return nil, fmt.Errorf("parse connection key: %w", err)
 		}
 
-		cfg, err := ClientTLSConfig(key)
+		cfg, err := pbtls.ClientTLSConfig(key)
 		if err != nil {
 			return nil, fmt.Errorf("configure TLS: %w", err)
 		}

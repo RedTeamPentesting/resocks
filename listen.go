@@ -3,16 +3,15 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 
+	"resocks/pbtls"
+	"resocks/proxyrelay"
+
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/hashicorp/yamux"
 	"github.com/spf13/cobra"
-	"golang.org/x/sync/errgroup"
 )
 
 func listenCommand() *cobra.Command {
@@ -67,7 +66,7 @@ func runLocalSocksProxy(
 	updateUI, waitForUItoShutdown, uiShutdown := startUI(key, connectBackAddr, proxyAddr, insecure, noColor)
 	defer func() {
 		// if the proxy terminates autonomously, notify UI and wait for it to close aswell
-		updateUI(statusShutdown)
+		updateUI(shutdownMessage{})
 		<-uiShutdown // only terminate after UI has cleaned up the terminal
 	}()
 
@@ -100,8 +99,6 @@ func runLocalSocksProxy(
 			err = nil
 		}
 
-		updateUI(relayDisconnectedMessage(err))
-
 		if abortOnDisconnect || ctx.Err() != nil {
 			return nil
 		}
@@ -122,147 +119,28 @@ func handleRelayConnection(ctx context.Context, listener net.Listener, proxyAddr
 
 	defer relayConn.Close() //nolint:errcheck
 
-	updateUI(relayConnectedMessage(asIP(relayConn.RemoteAddr())))
-
-	client, err := yamux.Client(relayConn, yamuxCfg())
-	if err != nil {
-		return fmt.Errorf("initialize multiplexer: %w", err)
-	}
-
-	// we use the first connection to receive socks-related errors from the relay
-	errConn, err := client.Open()
-	if err != nil {
-		return fmt.Errorf("open error notification connection: %w", err)
-	}
-
-	// display the errors in the UI
-	go handleErrorNotificationConnection(errConn, updateUI)
-
-	err = startLocalProxyServer(proxyAddr, client, updateUI)
-	if err != nil {
-		return fmt.Errorf("proxy: %w", err)
-	}
-
-	return nil
+	return proxyrelay.RunProxyWithEventCallback(ctx, relayConn, proxyAddr, func(e proxyrelay.Event) { updateUI(e) })
 }
 
-func handleErrorNotificationConnection(conn net.Conn, updateUI func(tea.Msg)) {
-	for {
-		lengthBytes := make([]byte, 4)
-
-		_, err := conn.Read(lengthBytes)
-		if errors.Is(err, io.EOF) {
-			return
-		} else if err != nil {
-			updateUI(fmt.Errorf("read message length from error notification connection: %w", err))
-
-			return
-		}
-
-		msg := make([]byte, binary.BigEndian.Uint32(lengthBytes))
-
-		_, err = conn.Read(msg)
-		if err != nil {
-			updateUI(fmt.Errorf("read message from error notification connection: %w", err))
-
-			return
-		}
-
-		updateUI(fmt.Errorf(string(msg)))
-	}
-}
-
-func startLocalProxyServer(proxyAddr string, sess *yamux.Session, updateUI func(tea.Msg)) error {
-	proxyListener, err := net.Listen("tcp", proxyAddr)
-	if err != nil {
-		return fmt.Errorf("listen for relay connection: %w", err)
-	}
-
-	defer proxyListener.Close() //nolint:errcheck
-
-	updateUI(statusSOCKSActive)
-	defer updateUI(statusSOCKSInactive)
-
-	var closedBecausePayloadDisconnected bool
-
-	go func() {
-		<-sess.CloseChan()
-
-		closedBecausePayloadDisconnected = true
-
-		err := proxyListener.Close()
-		if err != nil {
-			updateUI(fmt.Errorf("socks5 close: %w", err))
-		}
-	}()
-
-	for {
-		conn, err := proxyListener.Accept()
-		if err != nil {
-			if closedBecausePayloadDisconnected {
-				return nil
-			}
-
-			return fmt.Errorf("accept socks5 connection: %w", err)
-		}
-
-		go func() {
-			err := handleLocalProxyConn(conn, sess)
-			if err != nil {
-				updateUI(fmt.Errorf("handling socks5 connection: %w", err))
-			}
-		}()
-	}
-}
-
-func handleLocalProxyConn(conn net.Conn, sess *yamux.Session) error {
-	yamuxConn, err := sess.Open()
-	if err != nil {
-		return fmt.Errorf("open multiplexed connection: %w", err)
-	}
-
-	var eg errgroup.Group
-
-	eg.Go(func() error {
-		_, err := io.Copy(yamuxConn, conn)
-		if err != nil {
-			return fmt.Errorf("proxy->relay: %w", err)
-		}
-
-		return nil
-	})
-
-	eg.Go(func() error {
-		_, err := io.Copy(conn, yamuxConn)
-		if err != nil {
-			return fmt.Errorf("relay->proxy: %w", err)
-		}
-
-		return nil
-	})
-
-	return eg.Wait()
-}
-
-func serverTLSConfig(connectionKey string, insecure bool) (*tls.Config, ConnectionKey, error) {
+func serverTLSConfig(connectionKey string, insecure bool) (*tls.Config, pbtls.ConnectionKey, error) {
 	var (
-		key ConnectionKey
+		key pbtls.ConnectionKey
 		err error
 	)
 
 	if connectionKey != "" {
-		key, err = ParseConnectionKey(connectionKey)
+		key, err = pbtls.ParseConnectionKey(connectionKey)
 		if err != nil {
 			return nil, key, fmt.Errorf("parse connection key: %w", err)
 		}
 	} else {
-		key, err = GenerateConnectionKey()
+		key, err = pbtls.GenerateConnectionKey()
 		if err != nil {
 			return nil, key, fmt.Errorf("generate connection key: %w", err)
 		}
 	}
 
-	cfg, err := ServerTLSConfig(key)
+	cfg, err := pbtls.ServerTLSConfig(key)
 	if err != nil {
 		return nil, key, fmt.Errorf("configure TLS: %w", err)
 	}
@@ -273,15 +151,4 @@ func serverTLSConfig(connectionKey string, insecure bool) (*tls.Config, Connecti
 	}
 
 	return cfg, key, nil
-}
-
-func asIP(addr net.Addr) net.IP {
-	switch a := addr.(type) {
-	case *net.TCPAddr:
-		return a.IP
-	case *net.UDPAddr:
-		return a.IP
-	default:
-		panic(fmt.Sprintf("unexpected address type: %T", a))
-	}
 }

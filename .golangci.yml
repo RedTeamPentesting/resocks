@@ -26,6 +26,8 @@ linters:
     - nonamedreturns # forbids named returns
     - gomnd # forbids magic numbers
     - ireturn # forbids returning interfaces
+    - gci # seems to be buggy right now
+    - gofumpt # seems to be buggy right now
 linters-settings:
   godox:
     keywords:

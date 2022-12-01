@@ -100,10 +100,6 @@ func handleRelayConnection(ctx context.Context, relayConn net.Conn, proxyAddr st
 		_ = relayConn.Close()
 	}()
 
-	if callback != nil {
-		callback(Event{Type: TypeRelayConnected, Data: asIP(relayConn.RemoteAddr()).String()})
-	}
-
 	client, err := yamux.Client(relayConn, yamuxCfg())
 	if err != nil {
 		return fmt.Errorf("initialize multiplexer: %w", err)

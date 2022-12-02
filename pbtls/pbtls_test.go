@@ -216,7 +216,7 @@ func TestClientServerErrorIfKeyDiffers(t *testing.T) {
 		t.Fatalf("same key was generated twice")
 	}
 
-	serverConfig, err := ServerTLSConfigForHostname(serverKey, clientConfig.ServerName)
+	serverConfig, err := ServerTLSConfigForServerName(serverKey, clientConfig.ServerName)
 	if err != nil {
 		t.Fatalf("generate client config: %v", err)
 	}

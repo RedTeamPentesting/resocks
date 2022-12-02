@@ -166,13 +166,13 @@ func generateCertificate(
 // The server certificate will use the connection keys public key as server
 // DNS name.
 func ServerTLSConfig(key ConnectionKey) (*tls.Config, error) {
-	return ServerTLSConfigForHostname(key, key.PublicKey())
+	return ServerTLSConfigForServerName(key, key.PublicKey())
 }
 
-// ServerTLSConfigForHostname generates a TLS server config based on the
+// ServerTLSConfigForServerName generates a TLS server config based on the
 // connection key with the provided hostname in the server certificate's DNS
 // name section.
-func ServerTLSConfigForHostname(key ConnectionKey, hostname string) (*tls.Config, error) {
+func ServerTLSConfigForServerName(key ConnectionKey, hostname string) (*tls.Config, error) {
 	ca, caKey, err := GenerateCA(key)
 	if err != nil {
 		return nil, fmt.Errorf("generate CA: %w", err)

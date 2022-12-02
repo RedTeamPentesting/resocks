@@ -26,6 +26,7 @@ linters:
     - nonamedreturns # forbids named returns
     - gomnd # forbids magic numbers
     - ireturn # forbids returning interfaces
+    - varnamelen # enforces long variable names for large variable scopes
     - gci # seems to be buggy right now
     - gofumpt # seems to be buggy right now
 linters-settings:
@@ -50,8 +51,6 @@ linters-settings:
         ignored-functions: os.WriteFile,os.MkdirAll
   exhaustive:
     default-signifies-exhaustive: true
-  varnamelen:
-    max-distance: 20
   gosec:
     excludes:
       - G304 # command execution

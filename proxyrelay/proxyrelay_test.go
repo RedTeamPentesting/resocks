@@ -28,6 +28,7 @@ func TestProxyRelay(t *testing.T) { //nolint:cyclop
 	receivedSOCKS5ActiveEvent := false
 	receivedSOCKS5InactiveEvent := false
 	receivedSOCKS5ConnectionOpenedEvent := false
+	receivedSOCKS5ConnectionClosedEvent := false
 
 	// at the very end, check if we have received all events
 	defer func() {
@@ -50,6 +51,10 @@ func TestProxyRelay(t *testing.T) { //nolint:cyclop
 		if !receivedSOCKS5ConnectionOpenedEvent {
 			t.Errorf("did not receive SOCKS5 connection opened event")
 		}
+
+		if !receivedSOCKS5ConnectionClosedEvent {
+			t.Errorf("did not receive SOCKS5 connection closed event")
+		}
 	}()
 
 	pipeA, pipeB := net.Pipe()
@@ -59,7 +64,7 @@ func TestProxyRelay(t *testing.T) { //nolint:cyclop
 	var eg errgroup.Group //nolint:varnamelen
 
 	eg.Go(func() error {
-		return RunRelay(pipeA)
+		return RunRelay(ctx, pipeA)
 	})
 
 	eg.Go(func() error {
@@ -76,6 +81,8 @@ func TestProxyRelay(t *testing.T) { //nolint:cyclop
 				receivedSOCKS5InactiveEvent = true
 			case TypeSOCKS5ConnectionOpened:
 				receivedSOCKS5ConnectionOpenedEvent = true
+			case TypeSOCKS5ConnectionClosed:
+				receivedSOCKS5ConnectionClosedEvent = true
 			}
 		})
 	})

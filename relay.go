@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
+	"time"
+
 	"resocks/pbtls"
 	"resocks/proxyrelay"
-	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -84,7 +86,7 @@ func connectBackAndRelay(tlsConfig *tls.Config, connectBackAddr string, timeout 
 
 	defer conn.Close() //nolint:errcheck
 
-	return proxyrelay.RunRelay(conn)
+	return proxyrelay.RunRelay(context.Background(), conn)
 }
 
 func clientTLSConfig(connectionKey string, insecure bool) (*tls.Config, error) {

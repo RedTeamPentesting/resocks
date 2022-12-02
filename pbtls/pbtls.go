@@ -129,18 +129,19 @@ func GenerateCA(key ConnectionKey) (caCert *x509.Certificate, caKey crypto.Priva
 func generateCertificate(
 	caCert *x509.Certificate, caKey crypto.PrivateKey, hostname string, usage x509.ExtKeyUsage,
 ) (pemCert []byte, pemKey []byte, err error) {
-	now := time.Now()
-
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, nil, fmt.Errorf("generate certificate key: %w", err)
 	}
 
+	serialNumber := &big.Int{}
+	serialNumber.SetBytes(pubKey)
+
 	template := &x509.Certificate{
-		SerialNumber:          big.NewInt(time.Now().UnixNano()),
+		SerialNumber:          serialNumber,
 		DNSNames:              []string{hostname},
-		NotBefore:             now,
-		NotAfter:              now.AddDate(1, 0, 0),
+		NotBefore:             time.Unix(0, 0),
+		NotAfter:              time.Date(9999, 1, 1, 0, 0, 0, 0, time.FixedZone("", 0)),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{usage},
 		BasicConstraintsValid: true,

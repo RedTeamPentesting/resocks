@@ -246,3 +246,22 @@ func TestClientServerErrorIfKeyDiffers(t *testing.T) {
 		t.Fatalf("reading from connection did not return an error")
 	}
 }
+
+func TestConnectionKeyValid(t *testing.T) {
+	key, err := GenerateConnectionKey()
+	if err != nil {
+		t.Fatalf("genrate connection key: %v", err)
+	}
+
+	if !key.Valid() {
+		t.Fatalf("generated connection key is not valid")
+	}
+}
+
+func TestConnectionKeyInvalid(t *testing.T) {
+	var key ConnectionKey
+
+	if key.Valid() {
+		t.Fatalf("all-zero connections key reports that it is valid")
+	}
+}

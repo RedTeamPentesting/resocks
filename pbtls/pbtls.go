@@ -86,6 +86,11 @@ func (key ConnectionKey) PublicKey() string {
 	return base64.RawStdEncoding.EncodeToString(ed25519.NewKeyFromSeed(key[:]).Public().(ed25519.PublicKey))
 }
 
+// Valid returns falls if every byte in the connection key is zero.
+func (key ConnectionKey) Valid() bool {
+	return !isZero(key[:])
+}
+
 // GenerateCA generates a deterministic CA certificate that never expires.
 // Identical connection keys will always result in identical ceritificates.
 func GenerateCA(key ConnectionKey) (caCert *x509.Certificate, caKey crypto.PrivateKey, err error) {

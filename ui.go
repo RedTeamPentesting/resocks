@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"strings"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 )
 
 type connection struct {
-	IP    net.IP
+	IP    string
 	Start time.Time
 	End   time.Time
 	Error string
@@ -92,7 +91,7 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	case proxyrelay.Event:
 		switch msg.Type {
 		case proxyrelay.TypeRelayConnected:
-			m.connection = &connection{IP: net.ParseIP(msg.Data), Start: time.Now()}
+			m.connection = &connection{IP: msg.Data, Start: time.Now()}
 		case proxyrelay.TypeRelayDisconnected:
 			if m.connection != nil {
 				m.connection.End = time.Now()

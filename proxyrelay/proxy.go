@@ -34,6 +34,10 @@ const (
 	// TypeSOCKS5Inactive is generated when the SOCKS5 server is stopped. The Data
 	// attribute is always empty.
 	TypeSOCKS5Inactive = "SOCKS5 server inactive"
+	// TypeSOCKS5ConnectionOpened is generate whenever a new connection is opened
+	// through the SOCKS5 server. The IP of host that initiated the connection
+	// is stored in the Data attribute.
+	TypeSOCKS5ConnectionOpened = "SOCKS5 connection opened"
 )
 
 // DefaultEventCallback prints all events to stdout except for error events,
@@ -55,6 +59,8 @@ var DefaultEventCallback = func(e Event) {
 		fmt.Println("SOCKS5 server active")
 	case TypeSOCKS5Inactive:
 		fmt.Println("SOCKS5 server inactive")
+	case TypeSOCKS5ConnectionOpened:
+		// ignore
 	default:
 		fmt.Fprintf(os.Stderr, "unexpected event %q: %s\n", e.Type, e.Data)
 	}
@@ -73,7 +79,7 @@ func RunProxyWithEventCallback(
 	ctx context.Context, relayConn net.Conn, socks5ListenAddr string, callback func(Event),
 ) error {
 	if callback != nil {
-		callback(Event{Type: TypeRelayConnected, Data: asIP(relayConn.RemoteAddr()).String()})
+		callback(Event{Type: TypeRelayConnected, Data: relayConn.RemoteAddr().String()})
 	}
 
 	err := handleRelayConnection(ctx, relayConn, socks5ListenAddr, callback)
@@ -193,6 +199,10 @@ func startLocalProxyServer(proxyAddr string, sess *yamux.Session, callback func(
 			return fmt.Errorf("accept socks5 connection: %w", err)
 		}
 
+		if callback != nil {
+			callback(Event{Type: TypeSOCKS5ConnectionOpened, Data: conn.RemoteAddr().String()})
+		}
+
 		go func() {
 			err := handleLocalProxyConn(conn, sess)
 			if err != nil && callback != nil {
@@ -229,15 +239,4 @@ func handleLocalProxyConn(conn net.Conn, sess *yamux.Session) error {
 	})
 
 	return eg.Wait()
-}
-
-func asIP(addr net.Addr) net.IP {
-	switch a := addr.(type) {
-	case *net.TCPAddr:
-		return a.IP
-	case *net.UDPAddr:
-		return a.IP
-	default:
-		panic(fmt.Sprintf("unexpected address type: %T", a))
-	}
 }

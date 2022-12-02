@@ -16,8 +16,10 @@ import (
 const (
 	// DefaultProxyPort is the port on which the SOCKS5 server is exposed by default.
 	DefaultProxyPort = 1080
+
 	// DefaultListenPort is the port to which the reverse TLS connection is established by default.
 	DefaultListenPort = 4080
+
 	// ConnectionKeyEnvVariable is the environment variable through which the default connection key can be set.
 	ConnectionKeyEnvVariable = "RESOCKS_KEY"
 )
@@ -39,7 +41,7 @@ func run() error {
 
 	generateCmd := &cobra.Command{
 		Use:   "generate",
-		Short: "Generates a connection ID",
+		Short: "Generates a connection key",
 		Args:  cobra.NoArgs,
 		RunE: func(*cobra.Command, []string) error {
 			key, err := pbtls.GenerateConnectionKey()

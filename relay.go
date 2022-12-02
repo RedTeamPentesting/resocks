@@ -41,7 +41,9 @@ func relayCommand() *cobra.Command {
 	flags.DurationVar(&reconnectAfter, "reconnect-after", reconnectAfter,
 		"Enables reconnect after given duration")
 	flags.StringVarP(&connectionKey, "key", "k", connectionKey,
-		"Connection key that is displayed when starting a listener")
+		fmt.Sprintf("Connection key that is displayed when starting a listener "+
+			"(default can be set using environment variable %s)",
+			ConnectionKeyEnvVariable))
 	flags.BoolVar(&insecure, "insecure", insecure,
 		"Don't check server certificate and only send client certificate when a connection key is specified")
 

@@ -44,7 +44,9 @@ func listenCommand() *cobra.Command {
 		"Address for the socks proxy server")
 	listenFlags.BoolVar(&abortOnDisconnect, "abort-on-disconnect", false, "Abort when the relay disconnects")
 	listenFlags.StringVarP(&connectionKey, "key", "k", connectionKey,
-		"Configures a static connection key instead of generating a key")
+		fmt.Sprintf("Configures a static connection key instead of generating a key "+
+			"(default can be set using environment variable %s)",
+			ConnectionKeyEnvVariable))
 	listenFlags.BoolVar(&insecure, "insecure", insecure, "Disables client certificate validation")
 	listenFlags.BoolVar(&noColor, "no-color", noColor, "Disables colored output")
 

@@ -106,7 +106,7 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		case proxyrelay.TypeSOCKS5Inactive:
 			m.socksActive = false
 		case proxyrelay.TypeError:
-			if msg.Data != "" {
+			if msg.Data == "" {
 				msg.Data = "unknown error"
 			}
 

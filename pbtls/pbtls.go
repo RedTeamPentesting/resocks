@@ -217,7 +217,7 @@ func ClientTLSConfigForClientName(key ConnectionKey, clientName string) (*tls.Co
 		return nil, fmt.Errorf("generate CA: %w", err)
 	}
 
-	pemClientCert, pemClientKey, err := generateCertificate(ca, caKey, key.PublicKey(), x509.ExtKeyUsageClientAuth)
+	pemClientCert, pemClientKey, err := generateCertificate(ca, caKey, clientName, x509.ExtKeyUsageClientAuth)
 	if err != nil {
 		return nil, fmt.Errorf("generate client certificate: %w", err)
 	}

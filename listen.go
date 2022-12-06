@@ -121,7 +121,11 @@ func handleRelayConnection(ctx context.Context, listener net.Listener, proxyAddr
 
 	defer relayConn.Close() //nolint:errcheck
 
-	return proxyrelay.RunProxyWithEventCallback(ctx, relayConn, proxyAddr, func(e proxyrelay.Event) { updateUI(e) })
+	return proxyrelay.RunProxyWithEventCallback(ctx, relayConn, proxyAddr, func(e proxyrelay.Event) {
+		if e.Type != proxyrelay.TypeSOCKS5ConnectionOpened && e.Type != proxyrelay.TypeSOCKS5ConnectionClosed {
+			updateUI(e)
+		}
+	})
 }
 
 func serverTLSConfig(connectionKey string, insecure bool) (*tls.Config, pbtls.ConnectionKey, error) {

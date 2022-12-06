@@ -196,7 +196,7 @@ func (m *model) currentStateView() string {
 	if m.quitting {
 		socksStatus = m.style(brightRed) + "✗ Shutdown" + m.style()
 	} else if m.socksActive {
-		socksStatus = fmt.Sprintf(m.style(bightGreen) + fmt.Sprintf("● Active, listening on %s", m.socksAddress) + m.style())
+		socksStatus = fmt.Sprintf(m.style(bightGreen) + fmt.Sprintf("● Active on %s", m.socksAddress) + m.style())
 	}
 
 	return fmt.Sprintf(m.style(bold)+"Current Status:\n"+m.style()+"  Relay : %s\n  SOCKS5: %s\n",

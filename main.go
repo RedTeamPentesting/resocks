@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var version = "build from source"
+
 const (
 	// DefaultProxyPort is the port on which the SOCKS5 server is exposed by default.
 	DefaultProxyPort = 1080
@@ -55,8 +57,18 @@ func run() error {
 		},
 	}
 
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Print the current version",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("resocks %s\n", version)
+		},
+	}
+
 	relayCmd.AddCommand(listenCmd)
 	relayCmd.AddCommand(generateCmd)
+	relayCmd.AddCommand(versionCmd)
 
 	return relayCmd.Execute()
 }

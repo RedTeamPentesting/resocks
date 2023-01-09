@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"resocks/pbtls"
+	"resocks/kbtls"
 	"resocks/proxyrelay"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -44,7 +44,7 @@ type model struct {
 var _ tea.Model = &model{}
 
 func startUI(
-	connectionKey pbtls.ConnectionKey, listenAddr string,
+	connectionKey kbtls.ConnectionKey, listenAddr string,
 	socksAddr string, insecure bool, noColor bool,
 ) (update func(tea.Msg), wait func() error, done chan struct{}) {
 	program := tea.NewProgram(&model{

@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	"resocks/pbtls"
+	"resocks/kbtls"
 	"resocks/proxyrelay"
 
 	"github.com/spf13/cobra"
@@ -94,12 +94,12 @@ func connectBackAndRelay(tlsConfig *tls.Config, connectBackAddr string, timeout 
 func clientTLSConfig(connectionKey string, insecure bool) (*tls.Config, error) {
 	switch {
 	default:
-		key, err := pbtls.ParseConnectionKey(connectionKey)
+		key, err := kbtls.ParseConnectionKey(connectionKey)
 		if err != nil {
 			return nil, fmt.Errorf("parse connection key: %w", err)
 		}
 
-		cfg, err := pbtls.ClientTLSConfig(key)
+		cfg, err := kbtls.ClientTLSConfig(key)
 		if err != nil {
 			return nil, fmt.Errorf("configure TLS: %w", err)
 		}
@@ -111,12 +111,12 @@ func clientTLSConfig(connectionKey string, insecure bool) (*tls.Config, error) {
 	case insecure && connectionKey == "": // don't send client cert and don't check server cert
 		return &tls.Config{InsecureSkipVerify: true}, nil //nolint:gosec
 	case insecure && connectionKey != "": // send client cert but don't check server cert
-		key, err := pbtls.ParseConnectionKey(connectionKey)
+		key, err := kbtls.ParseConnectionKey(connectionKey)
 		if err != nil {
 			return nil, fmt.Errorf("parse connection key: %w", err)
 		}
 
-		cfg, err := pbtls.ClientTLSConfig(key)
+		cfg, err := kbtls.ClientTLSConfig(key)
 		if err != nil {
 			return nil, fmt.Errorf("configure TLS: %w", err)
 		}

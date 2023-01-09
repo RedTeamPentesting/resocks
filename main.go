@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"resocks/pbtls"
+	"resocks/kbtls"
 
 	"github.com/spf13/cobra"
 )
@@ -46,7 +46,7 @@ func run() error {
 		Short: "Generates a connection key",
 		Args:  cobra.NoArgs,
 		RunE: func(*cobra.Command, []string) error {
-			key, err := pbtls.GenerateConnectionKey()
+			key, err := kbtls.GenerateConnectionKey()
 			if err != nil {
 				return err
 			}

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net"
 
-	"resocks/pbtls"
+	"resocks/kbtls"
 	"resocks/proxyrelay"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -128,25 +128,25 @@ func handleRelayConnection(ctx context.Context, listener net.Listener, proxyAddr
 	})
 }
 
-func serverTLSConfig(connectionKey string, insecure bool) (*tls.Config, pbtls.ConnectionKey, error) {
+func serverTLSConfig(connectionKey string, insecure bool) (*tls.Config, kbtls.ConnectionKey, error) {
 	var (
-		key pbtls.ConnectionKey
+		key kbtls.ConnectionKey
 		err error
 	)
 
 	if connectionKey != "" {
-		key, err = pbtls.ParseConnectionKey(connectionKey)
+		key, err = kbtls.ParseConnectionKey(connectionKey)
 		if err != nil {
 			return nil, key, fmt.Errorf("parse connection key: %w", err)
 		}
 	} else {
-		key, err = pbtls.GenerateConnectionKey()
+		key, err = kbtls.GenerateConnectionKey()
 		if err != nil {
 			return nil, key, fmt.Errorf("generate connection key: %w", err)
 		}
 	}
 
-	cfg, err := pbtls.ServerTLSConfig(key)
+	cfg, err := kbtls.ServerTLSConfig(key)
 	if err != nil {
 		return nil, key, fmt.Errorf("configure TLS: %w", err)
 	}

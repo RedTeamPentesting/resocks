@@ -1,5 +1,5 @@
-// Package pbtls implements password-based TLS.
-package pbtls
+// Package kbtls implements key-based TLS.
+package kbtls
 
 import (
 	"crypto"

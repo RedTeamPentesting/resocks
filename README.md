@@ -3,7 +3,7 @@
   <p align="center"><i></i></p>
   <p align="center">
     <a href="https://github.com/RedTeamPentesting/resocks/releases/latest"><img alt="Release" src="https://img.shields.io/github/release/RedTeamPentesting/resocks.svg?style=for-the-badge"></a>
-    <a href="https://github.com/RedTeamPentesting/resocks/actions?workflow=Check"><img alt="GitHub Action: Check" src="https://img.shields.io/github/workflow/status/RedTeamPentesting/resocks/Check/main?style=for-the-badge"></a>
+    <a href="https://github.com/RedTeamPentesting/resocks/actions?workflow=Check"><img alt="GitHub Action: Check" src="https://img.shields.io/github/actions/workflow/status/RedTeamPentesting/resocks/check.yml?branch=main&style=for-the-badge"></a>
     <a href="/LICENSE"><img alt="Software License" src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=for-the-badge"></a>
     <a href="https://goreportcard.com/report/github.com/RedTeamPentesting/resocks"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/RedTeamPentesting/resocks?style=for-the-badge"></a>
   </p>

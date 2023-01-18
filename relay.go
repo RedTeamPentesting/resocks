@@ -23,7 +23,6 @@ func relayCommand() *cobra.Command {
 		Use:           fmt.Sprintf("%s <connect back address> --key <connection key>", binaryName()),
 		Short:         fmt.Sprintf("Connect back to an %s listener and relay the SOCKS5 traffic", binaryName()),
 		SilenceErrors: true,
-		SilenceUsage:  true,
 		Args:          cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRemoteProxyRelay(

@@ -93,7 +93,7 @@ func runLocalSocksProxy(
 		_ = listener.Close()
 	}()
 
-	defer listener.Close() //nolint:errcheck
+	defer listener.Close() //nolint:errcheck,gosec
 
 	for {
 		err = handleRelayConnection(ctx, listener, proxyAddr, updateUI)

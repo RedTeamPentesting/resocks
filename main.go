@@ -83,6 +83,11 @@ func withDefaultPort(addr string, defaultPort int) string {
 }
 
 func binaryName() string {
+	executable, err := os.Executable()
+	if err == nil {
+		return filepath.Base(executable)
+	}
+
 	if len(os.Args) > 0 {
 		return filepath.Base(os.Args[0])
 	}

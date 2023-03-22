@@ -13,8 +13,8 @@
 
 `resocks` is a reverse/back-connect SOCKS5 proxy tunnel that can be used to
 route traffic through a system that can't be directly accessed (e.g. due to
-NAT). The channel is secured by TLS 1.3 and certificates are auto-generated
-based on a connection key.
+NAT). The channel is secured by mutually trusted TLS with auto-generated
+certificates based on a connection key.
 
 ![resocks](assets/resocks.png)
 
@@ -32,15 +32,15 @@ Copy the connection key and pass it to `resocks` on the relay
 system:
 
 ```bash
-# on relay system with IP 10.0.0.1
-$ resocks 1.2.3.4 --key <CONNECTION_KEY>
+# on remote relay system with IP 10.0.0.1
+$ resocks 1.2.3.4 --key $CONNECTION_KEY
 ```
 
 Now configure tools on the proxy entry point system to use the local SOCKS5
 server, for example:
 
 ```bash
-$ curl --proxy socks5://127.0.0.1:1080 http://10.0.0.2
+$ curl --proxy 'socks5://127.0.0.1:1080' 'http://10.0.0.2'
 ```
 
 You can also generate a connection key with `resocks generate` and pass it to
@@ -79,9 +79,11 @@ measures that can employed to harden `resocks` against such attacks.
 ### Key-Based TLS
 
 The tunnel between the listener and the relay is secured by a shared connection
-key. This key is used to establish a mutually trusted TLS 1.3 connection. This
-is possible because connection key can be used on both to derive the same CA
-certificate which is then used to sign the server and client certificates.
+key which is used to establish a mutually trusted TLS 1.3 connection. This works
+by using the key on both sides to derive the same CA certificate which is then
+used to sign the server and client certificates that are generated on the spot.
+The library that implements this techique (`kbtls`) is available
+[here](https://github.com/RedTeamPentesting/kbtls).
 
 ![resocks TLS setup](assets/resocks_tls.png)
 
@@ -92,12 +94,12 @@ When running either the `resocks` listener or relay on an untrusted system
 undermines the defenses agains scenarios A, B and C.
 
 By default, the connection key is passed as a command line flag and can be read
-out by attackers with the permission to see process listing with arguments
-(depending on the OS, this might not be possible at all). Alternatively, the
-connection key can be specified via environment variable (`$RESOCKS_KEY`) or it
-could be statically built into the binary as described [below](#building) (then
-revoke read permissions for other users). In certain scenarios, these techniques
-may prevent low-privileged attackers from gaining access to the connection keys.
+out by attackers with the permission to see process listing with arguments.
+Alternatively, the connection key can be specified via environment variable
+(`$RESOCKS_KEY`) or it could be statically built into the binary as described
+[below](#building). In this case, the read permissions will need to be revoked
+for other users. In certain scenarios, these techniques may prevent certain
+low-privileged attackers from gaining access to the connection keys.
 
 ## Building
 
@@ -111,5 +113,6 @@ In order to compile a static connection key as the default connection key
 directly into the binary, use the following command:
 
 ```bash
+go run . generate  # generate a connection key
 go build -ldflags="-X main.defaultConnectionKey=YOUR_CONNECTION_KEY"
 ```

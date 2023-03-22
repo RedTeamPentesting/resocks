@@ -172,7 +172,13 @@ func (m *model) errorsView() string {
 }
 
 func (m *model) listenerConfigView() string {
-	view := m.style(bold) + "Listening On  : " + m.style() + m.style(brightMagenta, bold) + m.listenAddress + m.style()
+	listeningLineStyle := bold
+	if m.socksActive {
+		listeningLineStyle = dim
+	}
+
+	view := m.style(listeningLineStyle) + "Listening On  : " + m.style() +
+		m.style(brightMagenta, listeningLineStyle) + m.listenAddress + m.style()
 	view += m.style(bold) + "\nConnection Key: " + m.style() + m.style(brightMagenta, bold) + m.connectionKey + m.style()
 
 	if m.insecure {

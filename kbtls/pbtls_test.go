@@ -116,8 +116,8 @@ func TestClientServerConfigCompatibility(t *testing.T) {
 	wait := make(chan struct{})
 
 	pipeA, pipeB := net.Pipe()
-	defer pipeA.Close() //nolint:errcheck
-	defer pipeB.Close() //nolint:errcheck
+	defer pipeA.Close() //nolint:errcheck,gosec
+	defer pipeB.Close() //nolint:errcheck,gosec
 	defer func() {
 		<-wait
 	}()
@@ -171,8 +171,8 @@ func TestClientServerErrorIfKeyAndNameDiffers(t *testing.T) {
 	wait := make(chan struct{})
 
 	pipeA, pipeB := net.Pipe()
-	defer pipeA.Close() //nolint:errcheck
-	defer pipeB.Close() //nolint:errcheck
+	defer pipeA.Close() //nolint:errcheck,gosec
+	defer pipeB.Close() //nolint:errcheck,gosec
 	defer func() {
 		<-wait
 	}()
@@ -224,8 +224,8 @@ func TestClientServerErrorIfKeyDiffers(t *testing.T) {
 	wait := make(chan struct{})
 
 	pipeA, pipeB := net.Pipe()
-	defer pipeA.Close() //nolint:errcheck
-	defer pipeB.Close() //nolint:errcheck
+	defer pipeA.Close() //nolint:errcheck,gosec
+	defer pipeB.Close() //nolint:errcheck,gosec
 	defer func() {
 		<-wait
 	}()

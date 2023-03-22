@@ -2,6 +2,7 @@ package proxyrelay
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -59,9 +60,15 @@ func handleRelayConnection(ctx context.Context, relayConn net.Conn, proxyAddr st
 		return fmt.Errorf("initialize multiplexer: %w", err)
 	}
 
+	var tlsErr *tls.CertificateVerificationError
+
 	// we use the first connection to receive socks-related errors from the relay
 	errConn, err := client.Open()
 	if err != nil {
+		if errors.Is(err, yamux.ErrSessionShutdown) || errors.As(err, &tlsErr) {
+			return fmt.Errorf("invalid connection key")
+		}
+
 		return fmt.Errorf("open error notification connection: %w", err)
 	}
 
@@ -117,7 +124,7 @@ func startLocalProxyServer(proxyAddr string, sess *yamux.Session, callback func(
 		return fmt.Errorf("listen for relay connection: %w", err)
 	}
 
-	defer proxyListener.Close() //nolint:errcheck
+	defer proxyListener.Close() //nolint:errcheck,gosec
 
 	if callback != nil {
 		callback(Event{Type: TypeSOCKS5Active})
@@ -180,8 +187,8 @@ func handleLocalProxyConn(conn net.Conn, sess *yamux.Session) error {
 	var eg errgroup.Group
 
 	eg.Go(func() error {
-		defer conn.Close()      //nolint:errcheck
-		defer yamuxConn.Close() //nolint:errcheck
+		defer conn.Close()      //nolint:errcheck,gosec
+		defer yamuxConn.Close() //nolint:errcheck,gosec
 
 		_, err := io.Copy(yamuxConn, conn)
 		if err != nil && !errors.Is(err, net.ErrClosed) {
@@ -192,8 +199,8 @@ func handleLocalProxyConn(conn net.Conn, sess *yamux.Session) error {
 	})
 
 	eg.Go(func() error {
-		defer conn.Close()      //nolint:errcheck
-		defer yamuxConn.Close() //nolint:errcheck
+		defer conn.Close()      //nolint:errcheck,gosec
+		defer yamuxConn.Close() //nolint:errcheck,gosec
 
 		_, err := io.Copy(conn, yamuxConn)
 		if err != nil && !errors.Is(err, net.ErrClosed) {

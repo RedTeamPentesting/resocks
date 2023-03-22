@@ -43,7 +43,7 @@ func RunRelayWithEventCallback(ctx context.Context, conn net.Conn, callback func
 		return fmt.Errorf("accept error notification connection: %w", err)
 	}
 
-	defer errConn.Close() //nolint:errcheck
+	defer errConn.Close() //nolint:errcheck,gosec
 
 	socksServer, err := socks5.New(&socks5.Config{Logger: newRemoteLogger(errConn, callback)})
 	if err != nil {

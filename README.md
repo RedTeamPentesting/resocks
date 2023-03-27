@@ -50,16 +50,17 @@ the `listen` command to avoid generating a new connection key every time.
 
 The threat model of `resocks` primarily takes into account attackers that can
 inspect, intercept and modify traffic between the listener and the relay.
-Specifically, `resocks` aims to defend agains the following scenarios:
+Specifically, `resocks` aims to defend against the following scenarios:
 
-- **A: Malicious Observer:** Attackers with network access between the listener and
-  the proxy should not be able to see the SOCKS5 traffic that is routed through
-  the tunnel.
-- **B: Malicios Listener:** When connecting the proxy to a listener, attackers
-  should not be able to redirect the traffic to a malicios listener, as this
-  would grant them access to the proxy's network.
-- **C: Malicios Proxy:** Attackers should not be able to connect to a listener and
-  receive the traffic that was originally meant to be routed through the
+- **A: Malicious Observer:** Attackers with network access between the listener
+  and the proxy should not be able to see the SOCKS5 traffic that is routed
+  through the tunnel.
+- **B: Malicious Listener:** When connecting the proxy to a listener, attackers
+  should not be able to redirect the traffic to a malicious listener, as this
+  would grant them access to the proxy server's network.
+- **C: Malicious Relay:** Attackers should not be able to connect to an existing
+  listener in order to be able to receive the traffic that was meant to be
+  routed through the legitimate proxy.
 
 This threat model suggests using a mutually authenticated encrypted connection
 between the listener and the relay as described [here](#key-based-tls).
@@ -67,11 +68,11 @@ between the listener and the relay as described [here](#key-based-tls).
 Please note that `resocks` is **not** designed to defend against the following
 scenarios:
 
-- **D: Malicious User on Listener System:** Malicous users on the system hosting
-  the listener is generally able to connect the SOCKS5 proxy and read the
-  connection key.
-- **E: Malicious User on the Proxy System:** A malicious user on the system hosting
-  the relay can generally read the connection key.
+- **D: Malicious User on Listener System:** Malicious users on the system
+  hosting the listener is generally able to connect to the SOCKS5 proxy or
+  extract the connection key.
+- **E: Malicious User on the Relay System:** A malicious user on the system
+  hosting the relay can generally extract the connection key.
 
 However, as described [here](#defense-in-depth), there a some defense-in-depth
 measures that can employed to harden `resocks` against such attacks.
@@ -82,7 +83,7 @@ The tunnel between the listener and the relay is secured by a shared connection
 key which is used to establish a mutually trusted TLS 1.3 connection. This works
 by using the key on both sides to derive the same CA certificate which is then
 used to sign the server and client certificates that are generated on the spot.
-The library that implements this techique (`kbtls`) is available
+The library that implements this technique (`kbtls`) is available
 [here](https://github.com/RedTeamPentesting/kbtls).
 
 ![resocks TLS setup](assets/resocks_tls.png)
@@ -91,7 +92,7 @@ The library that implements this techique (`kbtls`) is available
 
 When running either the `resocks` listener or relay on an untrusted system
 (scenarios D/E), attackers can potentially read the connection key which
-undermines the defenses agains scenarios A, B and C.
+undermines the defenses against scenarios A, B and C.
 
 By default, the connection key is passed as a command line flag and can be read
 out by attackers with the permission to see process listing with arguments.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -54,6 +55,14 @@ func startUI(
 		insecure:      insecure,
 		noColor:       noColor,
 	})
+
+	if !noColor {
+		err := enableVirtualTerminalProcessing()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Could not enable virtual terminal processing: %v, "+
+				"disabling colored output\n", err)
+		}
+	}
 
 	done = make(chan struct{})
 

@@ -7,8 +7,9 @@ import (
 	"net"
 	"time"
 
-	"resocks/kbtls"
 	"resocks/proxyrelay"
+
+	"github.com/RedTeamPentesting/kbtls"
 
 	"github.com/spf13/cobra"
 )

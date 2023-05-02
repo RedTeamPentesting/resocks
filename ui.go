@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"resocks/kbtls"
 	"resocks/proxyrelay"
+
+	"github.com/RedTeamPentesting/kbtls"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

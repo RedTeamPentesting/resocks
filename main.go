@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"resocks/kbtls"
+	"github.com/RedTeamPentesting/kbtls"
 
 	"github.com/spf13/cobra"
 )

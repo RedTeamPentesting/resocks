@@ -3,6 +3,7 @@ module resocks
 go 1.19
 
 require (
+	github.com/RedTeamPentesting/kbtls v0.1.0
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/hashicorp/yamux v0.1.1

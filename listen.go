@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"net"
 
-	"resocks/kbtls"
 	"resocks/proxyrelay"
+
+	"github.com/RedTeamPentesting/kbtls"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"

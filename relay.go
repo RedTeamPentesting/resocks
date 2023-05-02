@@ -19,15 +19,25 @@ func relayCommand() *cobra.Command {
 	connectionKey := fromEnvWithFallback(ConnectionKeyEnvVariable, defaultConnectionKey)
 	insecure := false
 
+	cobraArgs := cobra.ExactArgs(1)
+	if defaultConnectBackAddress != "" {
+		cobraArgs = cobra.MaximumNArgs(1)
+	}
+
 	relayCmd := &cobra.Command{
 		Use:           fmt.Sprintf("%s <connect back address> --key <connection key>", binaryName()),
 		Short:         fmt.Sprintf("Connect back to an %s listener and relay the SOCKS5 traffic", binaryName()),
 		SilenceErrors: true,
 		SilenceUsage:  true,
-		Args:          cobra.ExactArgs(1),
+		Args:          cobraArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			connectBackAddress := defaultConnectBackAddress
+			if len(args) > 0 {
+				connectBackAddress = args[0]
+			}
+
 			return runRemoteProxyRelay(
-				withDefaultPort(args[0], DefaultListenPort), // connect back address
+				withDefaultPort(connectBackAddress, DefaultListenPort),
 				connectionKey,
 				timeout,
 				reconnectAfter,

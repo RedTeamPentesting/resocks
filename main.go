@@ -26,7 +26,10 @@ const (
 	ConnectionKeyEnvVariable = "RESOCKS_KEY"
 )
 
-var defaultConnectionKey = ""
+var (
+	defaultConnectionKey      = ""
+	defaultConnectBackAddress = ""
+)
 
 func main() {
 	err := run()

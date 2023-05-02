@@ -44,7 +44,13 @@ $ curl --proxy 'socks5://127.0.0.1:1080' 'http://10.0.0.2'
 ```
 
 You can also generate a connection key with `resocks generate` and pass it to
-the `listen` command to avoid generating a new connection key every time.
+the `listen` command to avoid generating a new connection key every time. It
+can also be specified via an environment variable:
+
+```bash
+$ export RESOCKS_KEY="$(resocks generate)"
+$ resocks listen
+```
 
 ## Security
 
@@ -116,4 +122,11 @@ directly into the binary, use the following command:
 ```bash
 go run . generate  # generate a connection key
 go build -ldflags="-X main.defaultConnectionKey=YOUR_CONNECTION_KEY"
+```
+
+Similarly, the default connect back address can also be statically compiled into
+the binary:
+
+```bash
+go build -ldflags="-X main.defaultConnectBackAddress=192.0.2.1"
 ```

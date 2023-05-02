@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"resocks/kbtls"
@@ -40,6 +41,8 @@ type model struct {
 	socksAddress  string
 
 	noColor bool
+
+	lock sync.Mutex
 }
 
 var _ tea.Model = &model{}
@@ -57,7 +60,9 @@ func startUI(
 	})
 
 	if !noColor {
-		err := enableVirtualTerminalProcessing()
+		resetTerminal, err := prepareTerminal()
+		defer resetTerminal()
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Could not enable virtual terminal processing: %v, "+
 				"disabling colored output\n", err)
@@ -96,6 +101,9 @@ func (m *model) Init() tea.Cmd {
 }
 
 func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	switch msg := message.(type) {
 	case proxyrelay.Event:
 		switch msg.Type {
@@ -128,6 +136,11 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
 			m.quitting = true
+			if m.connection != nil {
+				m.connection.End = time.Now()
+				m.connection.Error = "shutdown"
+				m.connection = nil
+			}
 
 			return m, tea.Quit
 		}
@@ -181,13 +194,20 @@ func (m *model) errorsView() string {
 }
 
 func (m *model) listenerConfigView() string {
-	listeningLineStyle := bold
-	if m.socksActive {
-		listeningLineStyle = dim
+	address := m.listenAddress
+	if strings.HasPrefix(address, ":") {
+		address = "*" + address
 	}
 
-	view := m.style(listeningLineStyle) + "Listening On  : " + m.style() +
-		m.style(brightMagenta, listeningLineStyle) + m.listenAddress + m.style()
+	addressStyle := m.style(brightMagenta, bold)
+
+	if m.socksActive {
+		addressStyle = m.style(dim)
+		address += " (inactive)"
+	}
+
+	view := m.style(bold) + "Listening On  : " + m.style() +
+		addressStyle + address + m.style()
 	view += m.style(bold) + "\nConnection Key: " + m.style() + m.style(brightMagenta, bold) + m.connectionKey + m.style()
 
 	if m.insecure {

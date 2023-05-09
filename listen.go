@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net"
 
-	"resocks/proxyrelay"
+	"github.com/RedTeamPentesting/resocks/proxyrelay"
 
 	"github.com/RedTeamPentesting/kbtls"
 

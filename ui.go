@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"resocks/proxyrelay"
+	"github.com/RedTeamPentesting/resocks/proxyrelay"
 
 	"github.com/RedTeamPentesting/kbtls"
 

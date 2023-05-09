@@ -1,6 +1,6 @@
-module resocks
+module github.com/RedTeamPentesting/resocks
 
-go 1.19
+go 1.20
 
 require (
 	github.com/RedTeamPentesting/kbtls v0.1.1

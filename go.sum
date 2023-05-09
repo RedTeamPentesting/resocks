@@ -1,5 +1,7 @@
 github.com/RedTeamPentesting/kbtls v0.1.0 h1:i5dt8w5bx0iHS4IHqU6GnNkeV3ku3HO5595A27zJuX8=
 github.com/RedTeamPentesting/kbtls v0.1.0/go.mod h1:3zrRXDxOPv1fsaswQsMiLtaMIkRkZu7i7MBFa9+duNE=
+github.com/RedTeamPentesting/kbtls v0.1.1 h1:p9x2OH7fBGgBZnACJ6sVo8MsNczFgITfTbpVexzSS2Y=
+github.com/RedTeamPentesting/kbtls v0.1.1/go.mod h1:3zrRXDxOPv1fsaswQsMiLtaMIkRkZu7i7MBFa9+duNE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/aymanbagabas/go-osc52 v1.2.1/go.mod h1:zT8H+Rk4VSabYN90pWyugflM3ZhpTZNC7cASDfUCdT4=

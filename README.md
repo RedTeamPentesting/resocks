@@ -14,7 +14,9 @@
 `resocks` is a reverse/back-connect SOCKS5 proxy tunnel that can be used to
 route traffic through a system that can't be directly accessed (e.g. due to
 NAT). The channel is secured by mutually trusted TLS with auto-generated
-certificates based on a connection key.
+certificates based on a connection key. Read our
+[blog post](https://blog.redteam-pentesting.de/2023/introducing-resocks/)
+for more information.
 
 ![resocks](assets/resocks.png)
 

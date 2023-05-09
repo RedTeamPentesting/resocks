@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	testServerAddr = "127.0.0.222:222"
-	testProxyAddr  = "127.0.0.111:111"
+	testServerAddr = "127.0.0.1:9248"
+	testProxyAddr  = "127.0.0.1:3874"
 )
 
 func TestProxyRelay(t *testing.T) { //nolint:cyclop

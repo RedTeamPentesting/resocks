@@ -49,7 +49,7 @@ jobs:
 
       - name: Run tests
         run: |
-          go test ./...
+          go test ./... -timeout 20s
 
   build:
     strategy:

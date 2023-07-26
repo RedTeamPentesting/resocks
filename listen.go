@@ -94,7 +94,7 @@ func runLocalSocksProxy(
 		_ = listener.Close()
 	}()
 
-	defer listener.Close() //nolint:errcheck,gosec
+	defer listener.Close() //nolint:errcheck
 
 	for {
 		err = handleRelayConnection(ctx, listener, proxyAddr, updateUI)
@@ -120,7 +120,7 @@ func handleRelayConnection(ctx context.Context, listener net.Listener, proxyAddr
 		_ = relayConn.Close()
 	}()
 
-	defer relayConn.Close() //nolint:errcheck,gosec
+	defer relayConn.Close() //nolint:errcheck
 
 	return proxyrelay.RunProxyWithEventCallback(ctx, relayConn, proxyAddr, func(e proxyrelay.Event) {
 		if e.Type != proxyrelay.TypeSOCKS5ConnectionOpened && e.Type != proxyrelay.TypeSOCKS5ConnectionClosed {

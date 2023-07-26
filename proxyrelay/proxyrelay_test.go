@@ -58,8 +58,8 @@ func TestProxyRelay(t *testing.T) { //nolint:cyclop
 	}()
 
 	pipeA, pipeB := net.Pipe()
-	defer pipeA.Close() //nolint:errcheck,gosec
-	defer pipeB.Close() //nolint:errcheck,gosec
+	defer pipeA.Close() //nolint:errcheck
+	defer pipeB.Close() //nolint:errcheck
 
 	var eg errgroup.Group //nolint:varnamelen
 

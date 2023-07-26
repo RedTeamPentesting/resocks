@@ -124,7 +124,7 @@ func startLocalProxyServer(proxyAddr string, sess *yamux.Session, callback func(
 		return fmt.Errorf("listen for relay connection: %w", err)
 	}
 
-	defer proxyListener.Close() //nolint:errcheck,gosec
+	defer proxyListener.Close() //nolint:errcheck
 
 	if callback != nil {
 		callback(Event{Type: TypeSOCKS5Active})
@@ -187,8 +187,8 @@ func handleLocalProxyConn(conn net.Conn, sess *yamux.Session) error {
 	var eg errgroup.Group
 
 	eg.Go(func() error {
-		defer conn.Close()      //nolint:errcheck,gosec
-		defer yamuxConn.Close() //nolint:errcheck,gosec
+		defer conn.Close()      //nolint:errcheck
+		defer yamuxConn.Close() //nolint:errcheck
 
 		_, err := io.Copy(yamuxConn, conn)
 		if err != nil && !errors.Is(err, net.ErrClosed) {
@@ -199,8 +199,8 @@ func handleLocalProxyConn(conn net.Conn, sess *yamux.Session) error {
 	})
 
 	eg.Go(func() error {
-		defer conn.Close()      //nolint:errcheck,gosec
-		defer yamuxConn.Close() //nolint:errcheck,gosec
+		defer conn.Close()      //nolint:errcheck
+		defer yamuxConn.Close() //nolint:errcheck
 
 		_, err := io.Copy(conn, yamuxConn)
 		if err != nil && !errors.Is(err, net.ErrClosed) {

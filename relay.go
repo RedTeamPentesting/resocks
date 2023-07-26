@@ -29,8 +29,15 @@ func relayCommand() *cobra.Command {
 		Use:           fmt.Sprintf("%s <connect back address> --key <connection key>", binaryName()),
 		Short:         fmt.Sprintf("Connect back to an %s listener and relay the SOCKS5 traffic", binaryName()),
 		SilenceErrors: true,
-		SilenceUsage:  false,
-		Args:          cobraArgs,
+		SilenceUsage:  true,
+		Args: func(cmd *cobra.Command, args []string) error {
+			err := cobraArgs(cmd, args)
+			if err != nil {
+				_ = cmd.Usage()
+			}
+
+			return err
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			connectBackAddress := defaultConnectBackAddress
 			if len(args) > 0 {
@@ -118,7 +125,7 @@ func clientTLSConfig(connectionKey string, insecure bool) (*tls.Config, error) {
 		return cfg, nil
 
 	case !insecure && connectionKey == "": // in secure mode a connection key is required
-		return nil, fmt.Errorf("connection key is required")
+		return nil, fmt.Errorf("connection key is required (--key)")
 	case insecure && connectionKey == "": // don't send client cert and don't check server cert
 		return &tls.Config{InsecureSkipVerify: true}, nil //nolint:gosec
 	case insecure && connectionKey != "": // send client cert but don't check server cert

@@ -185,13 +185,13 @@ func (m *model) errorsView() string {
 		return ""
 	}
 
-	view := m.style(bold) + "Errors:\n" + m.style() + m.style(yellow)
+	view := m.style(bold) + "Errors:\n" + m.style()
 
 	for _, err := range m.errors {
-		view += fmt.Sprintf("  ➜ %s: %s\n", formatTime(err.Time), err.Error.Error())
+		view += fmt.Sprintf("%s  ➜ %s: %s%s\n", m.style(yellow), formatTime(err.Time), err.Error.Error(), m.style())
 	}
 
-	return view + m.style() + "\n"
+	return view + "\n"
 }
 
 func (m *model) listenerConfigView() string {
